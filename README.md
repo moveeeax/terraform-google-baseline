@@ -10,7 +10,7 @@ custom-mode VPC network (`google_compute_network`).
 
 ```hcl
 module "baseline" {
-  source = "github.com/cybercapybara/terraform-google-baseline"
+  source = "github.com/moveeeax/terraform-google-baseline"
 
   project_id   = var.project_id
   region       = "us-central1"
