@@ -4,13 +4,23 @@ output "enabled_apis" {
 }
 
 output "state_bucket_name" {
-  description = "Name of the Terraform state and logs bucket."
+  description = "Name of the Terraform state bucket."
   value       = google_storage_bucket.state.name
 }
 
 output "state_bucket_url" {
-  description = "Base gs:// URL of the state and logs bucket."
+  description = "Base gs:// URL of the Terraform state bucket."
   value       = google_storage_bucket.state.url
+}
+
+output "audit_logged_service" {
+  description = "Service the project audit config applies to, or null when data access audit logging is disabled."
+  value       = one(google_project_iam_audit_config.this[*].service)
+}
+
+output "audit_log_types" {
+  description = "Audit log types configured on the project, or an empty list when data access audit logging is disabled."
+  value       = var.enable_data_access_audit_logs ? local.audit_log_types : []
 }
 
 output "network_id" {

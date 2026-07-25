@@ -4,7 +4,7 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Region for the state/log bucket and regional resources."
+  description = "Region for the state bucket and regional resources."
   type        = string
   default     = "us-central1"
 }
@@ -13,11 +13,25 @@ variable "activate_apis" {
   description = "APIs to enable as part of the baseline."
   type        = list(string)
   default = [
+    "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
     "storage.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
   ]
+}
+
+variable "enable_data_access_audit_logs" {
+  description = <<-EOT
+    Configure Cloud Audit Logging for allServices with ADMIN_READ, DATA_READ and
+    DATA_WRITE (CIS GCP Foundations 2.1). Admin Activity logs are written by
+    Google regardless, but Data Access logs are off by default, so setting this
+    to false leaves the project recording configuration changes only and nothing
+    about who read or wrote data. Data Access logs on allServices can be high
+    volume; disable it only if you configure audit logging elsewhere.
+  EOT
+  type        = bool
+  default     = true
 }
 
 variable "network_name" {
@@ -27,7 +41,7 @@ variable "network_name" {
 }
 
 variable "state_bucket_name" {
-  description = "Name of the Cloud Storage bucket for Terraform state and logs. Defaults to <project_id>-baseline-state."
+  description = "Name of the Cloud Storage bucket for Terraform state. Defaults to <project_id>-baseline-state."
   type        = string
   default     = null
 }
