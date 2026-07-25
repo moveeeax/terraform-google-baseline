@@ -29,3 +29,21 @@ jobs:
         run: |
           tofu init -backend=false
           tofu validate
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # tests/ uses mock_provider, which needs Terraform >= 1.7. The module
+      # itself still supports >= 1.5 — this is a test-only requirement.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: false
+
+      - name: init
+        run: terraform init -backend=false
+
+      - name: test
+        run: terraform test
