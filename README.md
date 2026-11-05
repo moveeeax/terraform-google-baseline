@@ -29,7 +29,7 @@ if you configure audit logging elsewhere.
 
 ```hcl
 module "baseline" {
-  source = "github.com/moveeeax/terraform-google-baseline"
+  source = "github.com/moveeeax/terraform-google-baseline?ref=v1.0.0"
 
   project_id   = var.project_id
   region       = "us-central1"
