@@ -69,3 +69,28 @@ resource "google_compute_network" "this" {
 
   depends_on = [google_project_service.this]
 }
+
+# New projects get a Compute Engine default service account (and an App Engine
+# one, once App Engine is used) holding roles/editor, and workloads that do not
+# name a service account run as it. That makes it a common privilege-escalation
+# path in a GCP project.
+#
+# Off ("keep") by default: workloads already running as the default service
+# account lose their permissions the moment it is deprivileged, disabled or
+# deleted, so upgrading this module must not do that on its own.
+#
+# On destroy (including switching back to "keep") the provider tries to undo a
+# DISABLE or DELETE; REVERT_AND_IGNORE_FAILURE keeps a failed undelete (IAM
+# only allows it for 30 days) from blocking the destroy. DEPRIVILEGE is never
+# reverted: the Editor grant does not come back.
+resource "google_project_default_service_accounts" "this" {
+  count = var.default_service_account == "keep" ? 0 : 1
+
+  project        = var.project_id
+  action         = upper(var.default_service_account)
+  restore_policy = "REVERT_AND_IGNORE_FAILURE"
+
+  # The Compute Engine default service account only exists once
+  # compute.googleapis.com is enabled.
+  depends_on = [google_project_service.this]
+}

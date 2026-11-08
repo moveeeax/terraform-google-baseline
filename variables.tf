@@ -34,6 +34,27 @@ variable "enable_data_access_audit_logs" {
   default     = true
 }
 
+variable "default_service_account" {
+  description = <<-EOT
+    What to do with the project's default service accounts (Compute Engine and
+    App Engine), which are created with roles/editor. One of:
+      * "keep"        - leave them alone (default).
+      * "deprivilege" - remove roles/editor from them. Not reverted on destroy.
+      * "disable"     - disable them. Re-enabled on destroy.
+      * "delete"      - delete them. Undeleted on destroy if still possible.
+    Anything other than "keep" breaks workloads that still run as a default
+    service account; move them to dedicated service accounts first.
+    "deprivilege" is the recommended setting.
+  EOT
+  type        = string
+  default     = "keep"
+
+  validation {
+    condition     = contains(["keep", "deprivilege", "disable", "delete"], var.default_service_account)
+    error_message = "default_service_account must be one of \"keep\", \"deprivilege\", \"disable\" or \"delete\"."
+  }
+}
+
 variable "network_name" {
   description = "Name of the baseline VPC network."
   type        = string

@@ -114,3 +114,80 @@ run "baseline_cannot_be_instantiated_as_a_no_op" {
     error_message = "The baseline VPC must be custom-mode; auto-mode creates a subnet with a predictable range in every region."
   }
 }
+
+run "default_service_accounts_are_left_alone_by_default" {
+  # Deprivileging, disabling or deleting the default service accounts breaks
+  # workloads still running as them, so upgrading the module must not do it.
+  assert {
+    condition     = length(google_project_default_service_accounts.this) == 0
+    error_message = "default_service_account must default to \"keep\" and create no google_project_default_service_accounts resource."
+  }
+
+  assert {
+    condition     = output.default_service_account_action == null
+    error_message = "default_service_account_action must be null when default_service_account is \"keep\"."
+  }
+}
+
+run "default_service_accounts_can_be_deprivileged" {
+  variables {
+    default_service_account = "deprivilege"
+  }
+
+  assert {
+    condition     = length(google_project_default_service_accounts.this) == 1
+    error_message = "default_service_account = \"deprivilege\" must create one google_project_default_service_accounts resource."
+  }
+
+  assert {
+    condition     = google_project_default_service_accounts.this[0].action == "DEPRIVILEGE"
+    error_message = "The action must be the upper-case enum the provider expects."
+  }
+
+  assert {
+    condition     = google_project_default_service_accounts.this[0].project == "example-project"
+    error_message = "The action must target var.project_id."
+  }
+
+  assert {
+    condition     = output.default_service_account_action == "DEPRIVILEGE"
+    error_message = "default_service_account_action must report the applied action."
+  }
+}
+
+run "default_service_accounts_can_be_disabled" {
+  variables {
+    default_service_account = "disable"
+  }
+
+  assert {
+    condition     = google_project_default_service_accounts.this[0].action == "DISABLE"
+    error_message = "default_service_account = \"disable\" must map to DISABLE."
+  }
+
+  assert {
+    condition     = google_project_default_service_accounts.this[0].restore_policy == "REVERT_AND_IGNORE_FAILURE"
+    error_message = "Destroying the resource must try to re-enable the accounts without failing the destroy."
+  }
+}
+
+run "default_service_accounts_can_be_deleted" {
+  variables {
+    default_service_account = "delete"
+  }
+
+  assert {
+    condition     = google_project_default_service_accounts.this[0].action == "DELETE"
+    error_message = "default_service_account = \"delete\" must map to DELETE."
+  }
+}
+
+run "rejects_unknown_default_service_account_action" {
+  command = plan
+
+  variables {
+    default_service_account = "DEPRIVILEGE"
+  }
+
+  expect_failures = [var.default_service_account]
+}
