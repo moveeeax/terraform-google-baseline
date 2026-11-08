@@ -32,3 +32,8 @@ output "network_self_link" {
   description = "URI of the baseline VPC network."
   value       = google_compute_network.this.self_link
 }
+
+output "default_service_account_action" {
+  description = "Action applied to the default service accounts (DEPRIVILEGE, DISABLE or DELETE), or null when default_service_account is \"keep\"."
+  value       = one(google_project_default_service_accounts.this[*].action)
+}

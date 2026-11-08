@@ -5,7 +5,8 @@ that establishes a minimal project baseline: it enables a set of core APIs
 (`google_project_service`), creates a versioned, non-public Cloud Storage
 bucket for Terraform state (`google_storage_bucket`), configures project-wide
 Cloud Audit Logging (`google_project_iam_audit_config`), and provisions a
-custom-mode VPC network (`google_compute_network`).
+custom-mode VPC network (`google_compute_network`). Optionally it locks down the
+project's default service accounts (`google_project_default_service_accounts`).
 
 ## Baseline defaults
 
@@ -25,6 +26,25 @@ covering data access are exactly the ones trimmed first when someone is chasing
 log volume. Use `enable_data_access_audit_logs = false` to opt out as a whole
 if you configure audit logging elsewhere.
 
+## Default service accounts
+
+A new project gets a Compute Engine default service account holding
+`roles/editor` (and an App Engine one once App Engine is used), and workloads
+that do not name a service account run as it. `default_service_account`
+controls what the module does with them:
+
+| Value           | Effect                                   | On destroy / switching back to `"keep"`        |
+|-----------------|------------------------------------------|------------------------------------------------|
+| `"keep"`        | Nothing (default).                       | n/a                                            |
+| `"deprivilege"` | Removes `roles/editor` from them.        | Not reverted; the Editor grant does not return. |
+| `"disable"`     | Disables them.                           | Re-enabled.                                    |
+| `"delete"`      | Deletes them.                            | Undeleted if IAM still allows it; a failure does not block the destroy. |
+
+The recommended value is `"deprivilege"`. It is not the default because any VM,
+GKE node pool or function still running as a default service account loses its
+permissions on apply, and upgrading the module must not do that silently. Move
+those workloads to dedicated service accounts, then set it.
+
 ## Usage
 
 ```hcl
@@ -34,6 +54,10 @@ module "baseline" {
   project_id   = var.project_id
   region       = "us-central1"
   network_name = "prod-vpc"
+
+  # Strip roles/editor from the default service accounts. Check first that no
+  # workload still relies on them.
+  default_service_account = "deprivilege"
 
   activate_apis = [
     "compute.googleapis.com",
@@ -63,6 +87,7 @@ A runnable example lives in [`examples/basic`](examples/basic).
 | `state_bucket_name`             | Name of the Terraform state bucket.                                         | `string`       | `null`           |    no    |
 | `labels`                        | Labels applied to the baseline resources.                                   | `map(string)`  | `{}`             |    no    |
 | `enable_data_access_audit_logs` | Configure `allServices` audit logging with `ADMIN_READ`/`DATA_READ`/`DATA_WRITE`. | `bool`   | `true`           |    no    |
+| `default_service_account`       | What to do with the default service accounts: `keep`, `deprivilege`, `disable` or `delete`. | `string` | `"keep"` |    no    |
 
 ## Outputs
 
@@ -75,6 +100,7 @@ A runnable example lives in [`examples/basic`](examples/basic).
 | `network_self_link`    | URI of the baseline VPC network.                                   |
 | `audit_logged_service` | Service the audit config applies to, or `null` when disabled.      |
 | `audit_log_types`      | Audit log types configured, or `[]` when disabled.                 |
+| `default_service_account_action` | Action applied to the default service accounts, or `null` for `"keep"`. |
 
 ## Tests
 

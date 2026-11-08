@@ -6,6 +6,14 @@ All notable changes to this module are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `default_service_account` input (`keep`, `deprivilege`, `disable`, `delete`)
+  that manages the project's default service accounts through
+  `google_project_default_service_accounts`, plus a
+  `default_service_account_action` output. Defaults to `keep`, so existing
+  deployments plan no change; `deprivilege` is the recommended value.
+
 ### Changed
 
 - CI: bump actions to their current majors, pin tool versions, and restrict the
